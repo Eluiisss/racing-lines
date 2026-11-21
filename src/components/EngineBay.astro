@@ -1,0 +1,480 @@
+---
+import { svgSize } from "../lib/archive";
+
+/**
+ * Interactive cutaway of an engine bay, built from two pixel-aligned drawings:
+ * the bare engine (`engine`) and the same view with bodywork (`body`).
+ *
+ * - On first view the engine "assembles": every path is drawn as a line from the core
+ *   outward, then filled. The bodywork then slides in to a half cutaway.
+ * - Fine pointers get an X-ray lens through the bodywork with a live sheet-coordinate HUD.
+ * - Drag on the drawing, or use the range input, to strip the bodywork away.
+ */
+interface Props {
+  engine: string;
+  body: string;
+  title: string;
+  /** Used in the screen-reader description, e.g. "Ford GT". */
+  carName: string;
+}
+
+const { engine, body, title, carName } = Astro.props;
+const { width, height } = svgSize(engine);
+---
+
+<section class="bay" aria-labelledby="bay-title">
+  <div class="bay__head">
+    <div>
+      <p class="label bay__kicker"><span class="xray-icon" aria-hidden="true"></span> X-ray inspection</p>
+      <h2 id="bay-title">{title}</h2>
+    </div>
+    <p class="bay__lede">
+      Move across the bay to see through the bodywork, or drag to strip it away. The engine draws itself
+      line by line the first time it comes into view.
+    </p>
+  </div>
+
+  <div
+    class="bay__stage ticks"
+    data-bay
+    data-engine={engine}
+    data-sheet-w={width}
+    data-sheet-h={height}
+    style={`aspect-ratio:${width}/${height}`}
+  >
+    <div class="bay__engine" data-bay-engine>
+      <img src={engine} alt="" width={width} height={height} loading="lazy" decoding="async" />
+    </div>
+    <img
+      class="bay__body"
+      src={body}
+      alt=""
+      width={width}
+      height={height}
+      loading="lazy"
+      decoding="async"
+    />
+
+    <div class="bay__wipe" aria-hidden="true">
+      <span class="bay__tab"><span>Body</span><span>Engine</span></span>
+    </div>
+    <div class="bay__lens" aria-hidden="true"></div>
+
+    <div class="hud hud--tl label" aria-hidden="true">
+      <span>View · top / rear</span>
+      <span>Assembly <b data-hud-progress>000</b>%</span>
+    </div>
+    <div class="hud hud--tr label" aria-hidden="true">
+      <span>Parts <b data-hud-parts>—</b></span>
+      <span>Body <b data-hud-body>100</b>%</span>
+    </div>
+    <div class="hud hud--bl label" aria-hidden="true">
+      <span>Cursor X <b data-hud-x>0000.0</b></span>
+      <span>Cursor Y <b data-hud-y>0000.0</b></span>
+    </div>
+  </div>
+
+  <p class="visually-hidden">
+    Cutaway drawing of the {carName} engine bay seen from above: the left side shows the bodywork, the
+    right side the engine beneath it.
+  </p>
+
+  <div class="bay__controls">
+    <label class="bay__range">
+      <span class="label">Strip bodywork</span>
+      <input type="range" min="0" max="100" step="1" value="50" data-bay-range />
+    </label>
+    <button type="button" class="btn btn--ghost" data-bay-replay>Replay assembly</button>
+  </div>
+</section>
+
+<script>
+  const ASSEMBLE_MS = 2600; // stagger window + per-line draw
+  const DRAW_MS = 1100;
+
+  const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function pad(n: number, digits: number) {
+    return n.toFixed(1).padStart(digits + 2, "0");
+  }
+
+  /** Smoothly animate a registered custom property via a CSS transition class. */
+  function setWipe(stage: HTMLElement, value: number, animate = false) {
+    stage.classList.toggle("is-sliding", animate && !reduceMotion());
+    stage.style.setProperty("--wipe", `${value}%`);
+    const hud = stage.querySelector("[data-hud-body]");
+    if (hud) hud.textContent = String(Math.round(value)).padStart(3, "0");
+    const range = stage.parentElement?.querySelector<HTMLInputElement>("[data-bay-range]");
+    if (range && Number(range.value) !== Math.round(value)) range.value = String(Math.round(value));
+  }
+
+  /** Fetch the engine SVG and inline it so each path can be drawn as a line. */
+  async function inlineEngine(stage: HTMLElement): Promise<SVGSVGElement | null> {
+    const holder = stage.querySelector<HTMLElement>("[data-bay-engine]");
+    const src = stage.dataset.engine;
+    if (!holder || !src) return null;
+    const existing = holder.querySelector("svg");
+    if (existing) return existing;
+    try {
+      const text = await (await fetch(src)).text();
+      const doc = new DOMParser().parseFromString(text, "image/svg+xml");
+      const svg = doc.documentElement as unknown as SVGSVGElement;
+      if (svg.nodeName !== "svg") return null;
+      svg.removeAttribute("width");
+      svg.removeAttribute("height");
+      svg.setAttribute("aria-hidden", "true");
+      svg.setAttribute("focusable", "false");
+      holder.replaceChildren(document.importNode(svg, true));
+      const live = holder.querySelector("svg")!;
+
+      // Order every visible path by distance from the drawing's core: assembly radiates outward.
+      const [cx, cy] = [Number(stage.dataset.sheetW) / 2, Number(stage.dataset.sheetH) * 0.45];
+      const paths = [...live.querySelectorAll<SVGPathElement>("path")].filter((p) => !p.closest("defs"));
+      const dist = paths.map((p) => {
+        const b = p.getBBox();
+        return Math.hypot(b.x + b.width / 2 - cx, b.y + b.height / 2 - cy);
+      });
+      const max = Math.max(...dist, 1);
+      paths.forEach((p, i) => {
+        p.setAttribute("pathLength", "1");
+        p.style.setProperty("--delay", `${Math.round((dist[i] / max) * (ASSEMBLE_MS - DRAW_MS))}ms`);
+      });
+      const parts = stage.querySelector("[data-hud-parts]");
+      if (parts) parts.textContent = String(paths.length).padStart(3, "0");
+      return live;
+    } catch {
+      return null; // keep the <img> fallback
+    }
+  }
+
+  function assemble(stage: HTMLElement, svg: SVGSVGElement | null) {
+    const progress = stage.querySelector("[data-hud-progress]");
+    if (!svg || reduceMotion()) {
+      if (progress) progress.textContent = "100";
+      setWipe(stage, 50);
+      return;
+    }
+    setWipe(stage, 0);
+    svg.classList.remove("is-assembling");
+    void svg.getBoundingClientRect(); // restart CSS animations
+    svg.classList.add("is-assembling");
+
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / ASSEMBLE_MS, 1);
+      if (progress) progress.textContent = String(Math.round(t * 100)).padStart(3, "0");
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+
+    window.setTimeout(() => {
+      svg.classList.remove("is-assembling");
+      setWipe(stage, 50, true); // the bodywork slides back in to a half cutaway
+    }, ASSEMBLE_MS + 300);
+  }
+
+  for (const stage of document.querySelectorAll<HTMLElement>("[data-bay]")) {
+    const section = stage.parentElement!;
+    const range = section.querySelector<HTMLInputElement>("[data-bay-range]");
+    const replay = section.querySelector<HTMLButtonElement>("[data-bay-replay]");
+    const hx = stage.querySelector("[data-hud-x]");
+    const hy = stage.querySelector("[data-hud-y]");
+    const sheetW = Number(stage.dataset.sheetW);
+    const sheetH = Number(stage.dataset.sheetH);
+    let svg: SVGSVGElement | null = null;
+    let dragging = false;
+
+    setWipe(stage, 50);
+
+    // Load + assemble once, just before the stage scrolls into view.
+    const io = new IntersectionObserver(
+      async (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        io.disconnect();
+        svg = await inlineEngine(stage);
+        assemble(stage, svg);
+      },
+      { rootMargin: "0px 0px -20% 0px" },
+    );
+    io.observe(stage);
+
+    const locate = (e: PointerEvent) => {
+      const r = stage.getBoundingClientRect();
+      const x = Math.min(Math.max((e.clientX - r.left) / r.width, 0), 1);
+      const y = Math.min(Math.max((e.clientY - r.top) / r.height, 0), 1);
+      return { x, y };
+    };
+
+    stage.addEventListener("pointermove", (e) => {
+      const { x, y } = locate(e);
+      stage.style.setProperty("--x", `${x * 100}%`);
+      stage.style.setProperty("--y", `${y * 100}%`);
+      if (hx) hx.textContent = pad(x * sheetW, 4);
+      if (hy) hy.textContent = pad(y * sheetH, 4);
+      if (dragging) setWipe(stage, x * 100);
+    });
+    stage.addEventListener("pointerenter", (e) => {
+      if (e.pointerType === "mouse" || e.pointerType === "pen") stage.classList.add("is-lens");
+    });
+    stage.addEventListener("pointerleave", () => stage.classList.remove("is-lens"));
+    stage.addEventListener("pointerdown", (e) => {
+      dragging = true;
+      stage.classList.remove("is-lens");
+      stage.setPointerCapture(e.pointerId);
+      setWipe(stage, locate(e).x * 100);
+    });
+    const stop = (e: PointerEvent) => {
+      if (!dragging) return;
+      dragging = false;
+      if (e.pointerType !== "touch") stage.classList.add("is-lens");
+    };
+    stage.addEventListener("pointerup", stop);
+    stage.addEventListener("pointercancel", stop);
+
+    range?.addEventListener("input", () => setWipe(stage, Number(range.value)));
+    replay?.addEventListener("click", async () => {
+      svg ??= await inlineEngine(stage);
+      assemble(stage, svg);
+    });
+  }
+</script>
+
+<style>
+  @property --wipe {
+    syntax: "<percentage>";
+    inherits: true;
+    initial-value: 50%;
+  }
+  @property --r {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 0px;
+  }
+
+  .bay {
+    margin-top: clamp(40px, 6vw, 72px);
+  }
+  .bay__head {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    align-items: end;
+    gap: 16px clamp(24px, 5vw, 64px);
+    padding-top: clamp(24px, 4vw, 48px);
+    margin-bottom: 24px;
+    border-top: 1px solid var(--ink);
+  }
+  .bay__head h2 {
+    margin-top: 6px;
+    font-size: var(--step-2);
+    text-transform: uppercase;
+  }
+  .bay__lede {
+    color: var(--line);
+  }
+
+  /* ---------- Stage ---------- */
+  .bay__stage {
+    --x: 50%;
+    --y: 50%;
+    --r: 0px;
+    --lens: clamp(70px, 12vw, 150px);
+    position: relative;
+    overflow: hidden;
+    background: var(--paper);
+    border: 1px solid var(--line-50);
+    cursor: ew-resize;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .bay__stage.is-lens {
+    --r: var(--lens);
+    cursor: crosshair;
+  }
+  .bay__stage {
+    transition: --r 320ms var(--ease);
+  }
+  .bay__stage.is-sliding {
+    transition:
+      --r 320ms var(--ease),
+      --wipe 1100ms cubic-bezier(0.65, 0, 0.35, 1);
+  }
+
+  .bay__engine,
+  .bay__body {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .bay__engine :global(svg),
+  .bay__engine img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* The bodywork: shown left of the wipe, with an X-ray hole where the lens is. */
+  .bay__body {
+    pointer-events: none;
+    -webkit-mask-image:
+      radial-gradient(circle at var(--x) var(--y), transparent var(--r), #000 calc(var(--r) + 1px)),
+      linear-gradient(90deg, #000 var(--wipe), transparent var(--wipe));
+    -webkit-mask-composite: source-in;
+    mask-image:
+      radial-gradient(circle at var(--x) var(--y), transparent var(--r), #000 calc(var(--r) + 1px)),
+      linear-gradient(90deg, #000 var(--wipe), transparent var(--wipe));
+    mask-composite: intersect;
+  }
+
+  /* Wipe divider with its tab. */
+  .bay__wipe {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--wipe);
+    width: 0;
+    border-left: 1.5px solid var(--ink);
+    pointer-events: none;
+  }
+  .bay__tab {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    display: flex;
+    transform: translate(-50%, -50%);
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .bay__tab span {
+    padding: 4px 8px;
+  }
+  .bay__tab span + span {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  /* X-ray lens: ring + crosshair ticks. */
+  .bay__lens {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: calc(var(--r) * 2);
+    height: calc(var(--r) * 2);
+    border: 1.5px solid var(--ink);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    background:
+      linear-gradient(var(--ink), var(--ink)) 50% 0 / 1px 10px no-repeat,
+      linear-gradient(var(--ink), var(--ink)) 50% 100% / 1px 10px no-repeat,
+      linear-gradient(var(--ink), var(--ink)) 0 50% / 10px 1px no-repeat,
+      linear-gradient(var(--ink), var(--ink)) 100% 50% / 10px 1px no-repeat;
+    box-shadow: 0 0 0 6px rgb(255 255 255 / 0.6);
+    opacity: 0;
+    transition: opacity 200ms var(--ease);
+  }
+  .is-lens .bay__lens {
+    opacity: 1;
+  }
+
+  /* HUD corners. */
+  .hud {
+    position: absolute;
+    display: grid;
+    gap: 2px;
+    padding: 6px 8px;
+    background: rgb(255 255 255 / 0.85);
+    border: 1px solid var(--line-30);
+    pointer-events: none;
+    font-size: 0.6875rem;
+  }
+  .hud b {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .hud--tl {
+    top: 12px;
+    left: 12px;
+  }
+  .hud--tr {
+    top: 12px;
+    right: 12px;
+    text-align: right;
+  }
+  .hud--bl {
+    bottom: 12px;
+    left: 12px;
+  }
+
+  /* ---------- Assembly: every path drawn as a line, then filled ---------- */
+  .bay__engine :global(svg.is-assembling path) {
+    stroke: var(--ink);
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    fill-opacity: 0;
+    animation:
+      bay-draw 1100ms cubic-bezier(0.45, 0, 0.2, 1) var(--delay, 0ms) forwards,
+      bay-fill 500ms ease-out calc(var(--delay, 0ms) + 800ms) forwards;
+  }
+  @keyframes bay-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes bay-fill {
+    to {
+      fill-opacity: 1;
+    }
+  }
+
+  /* ---------- Controls + specs ---------- */
+  .bay__controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    margin-top: 16px;
+  }
+  .bay__range {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1 1 320px;
+    min-height: 44px;
+  }
+  .bay__range input {
+    flex: 1;
+    min-height: 44px;
+    accent-color: var(--ink);
+    cursor: ew-resize;
+  }
+  .bay__kicker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  @media (max-width: 860px) {
+    .bay__head {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 560px) {
+    .hud--tr,
+    .hud--bl {
+      display: none;
+    }
+    .bay__controls .btn {
+      flex: 1 1 100%;
+    }
+  }
+</style>

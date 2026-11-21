@@ -26,7 +26,7 @@ const specs = headlineSpecs(data);
 const href = `/cars/${data.slug}/`;
 ---
 
-<li class="commit" data-brand={brand.slug} data-year={data.year}>
+<li class:list={["commit", data.cutaway && "commit--xray"]} data-brand={brand.slug} data-year={data.year}>
   <div class="commit__rail" aria-hidden="true">
     <span class="commit__node"></span>
     <span class="commit__year">{data.year}</span>
@@ -36,6 +36,13 @@ const href = `/cars/${data.slug}/`;
     <p class="card__meta label">
       <span class="card__hash">{hash}</span>
       <span class="card__msg">{commitMessage(data)}</span>
+      {
+        data.cutaway && (
+          <span class="card__badge" title="Interactive X-ray cutaway on this car's page">
+            <span class="xray-icon" aria-hidden="true" />X-ray
+          </span>
+        )
+      }
       <span class="card__tag">tag {data.year}</span>
     </p>
 
@@ -179,6 +186,41 @@ const href = `/cars/${data.slug}/`;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .card__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    background: var(--ink);
+    color: var(--paper);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .card__badge .xray-icon {
+    width: 10px;
+    height: 10px;
+  }
+  .card:hover .card__badge .xray-icon {
+    animation: xray-pulse 1.2s var(--ease) infinite;
+  }
+  @keyframes xray-pulse {
+    50% {
+      transform: scale(1.25);
+    }
+  }
+  /* Special node: crosshair lens instead of a dot. */
+  .commit--xray .commit__node {
+    background:
+      linear-gradient(var(--ink), var(--ink)) 50% 0 / 1.5px 5px no-repeat,
+      linear-gradient(var(--ink), var(--ink)) 50% 100% / 1.5px 5px no-repeat,
+      linear-gradient(var(--ink), var(--ink)) 0 50% / 5px 1.5px no-repeat,
+      linear-gradient(var(--ink), var(--ink)) 100% 50% / 5px 1.5px no-repeat,
+      var(--paper);
+  }
+  .commit--xray .commit__node::after {
+    inset: 6px;
   }
   .card__tag {
     text-transform: uppercase;

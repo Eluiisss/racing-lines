@@ -3,6 +3,7 @@ import type { GetStaticPaths } from "astro";
 import Base from "../../layouts/Base.astro";
 import BrandMark from "../../components/BrandMark.astro";
 import Drawing from "../../components/Drawing.astro";
+import EngineBay from "../../components/EngineBay.astro";
 import {
   brandOf,
   commitHash,
@@ -109,6 +110,17 @@ if (related.length === 0) {
             </ul>
           )}
         </section>
+      )
+    }
+
+    {
+      data.cutaway && (
+        <EngineBay
+          engine={data.cutaway.engine}
+          body={data.cutaway.body}
+          title={data.cutaway.title}
+          carName={`${data.make} ${data.model}`}
+        />
       )
     }
 

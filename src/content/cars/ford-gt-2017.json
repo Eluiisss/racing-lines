@@ -15,6 +15,11 @@
       "label": "Ford GT (second generation), side elevation"
     }
   ],
+  "cutaway": {
+    "title": "Lift the skin off the GT’s V6",
+    "engine": "/drawings/ford-gt/v6-engine-no-cover.svg",
+    "body": "/drawings/ford-gt/v6-engine.svg"
+  },
   "specifications": {
     "powertrain": [
       { "label": "Engine", "value": "3.5-litre twin-turbocharged EcoBoost V6" },

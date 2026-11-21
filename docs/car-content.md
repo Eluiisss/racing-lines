@@ -77,6 +77,7 @@ Each car is a JSON file in `src/content/cars/`. Use a lowercase kebab-case filen
 
 - Prefer factual summaries written in your own words. Do not copy articles, books, or other protected text. For a public statement, keep any excerpt brief, attribute it, and link its source.
 - Add drawings as original SVG files under `public/drawings/<car-slug>/`. A car may have zero to six drawings. Use the `view` enum to identify the perspective and a clear `label` for its accessible name.
+- `cutaway` is optional. It takes a `title` and two pixel-aligned SVGs of the same view under the car's drawing folder: `engine` (without bodywork) and `body` (with bodywork), for example `/drawings/ford-gt/v6-engine-no-cover.svg` and `/drawings/ford-gt/v6-engine.svg`. When present, the car page shows the interactive X-ray inspection section before the technical sheet, and the car's timeline card gets an "X-ray" badge.
 - `relatedCars` contains the slugs of other records. Check that each referenced car exists before publishing.
 - Use `sources` to keep factual provenance for specifications and history.
 

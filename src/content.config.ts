@@ -4,6 +4,13 @@ import { z } from "astro/zod";
 
 const slug = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
+const drawingSrc = z
+  .string()
+  .regex(
+    /^\/drawings\/[a-z0-9][a-z0-9/_-]*\.svg$/,
+    "Use a lowercase SVG path under public/drawings, e.g. /drawings/model/front.svg",
+  );
+
 const specification = z.object({
   label: z.string().trim().min(1),
   value: z.string().trim().min(1),
@@ -59,12 +66,7 @@ const cars = defineCollection({
     drawings: z
       .array(
         z.object({
-          src: z
-            .string()
-            .regex(
-              /^\/drawings\/[a-z0-9][a-z0-9/_-]*\.svg$/,
-              "Use a lowercase SVG path under public/drawings, e.g. /drawings/model/front.svg",
-            ),
+          src: drawingSrc,
           view: z.enum([
             "front-three-quarter",
             "rear-three-quarter",
@@ -82,6 +84,18 @@ const cars = defineCollection({
       )
       .max(6)
       .default([]),
+    /**
+     * Optional X-ray cutaway: two pixel-aligned drawings of the same view, without and with
+     * bodywork. Renders the interactive inspection section on the car page and flags the
+     * car with an "X-ray" badge in the commit tree.
+     */
+    cutaway: z
+      .object({
+        title: z.string().trim().min(1),
+        engine: drawingSrc,
+        body: drawingSrc,
+      })
+      .optional(),
     specifications: z.object({
       powertrain: z.array(specification).default([]),
       chassis: z.array(specification).default([]),
