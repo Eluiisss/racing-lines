@@ -1,0 +1,172 @@
+---
+import Logo from "../components/Logo.astro";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description: string;
+  /** Path of the current section, for aria-current on the nav. */
+  current?: "timeline" | "index";
+}
+
+const { title, description, current } = Astro.props;
+const pageTitle = title === "Racing Lines" ? title : `${title} · Racing Lines`;
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#ffffff" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap site-header__inner">
+        <a class="brand" href="/" aria-label="Racing Lines, home">
+          <Logo />
+          <span class="brand__name">Racing Lines</span>
+          <span class="brand__tag label">Drawing archive</span>
+        </a>
+        <nav aria-label="Main">
+          <ul class="nav">
+            <li>
+              <a class="link" href="/#timeline" aria-current={current === "timeline" ? "page" : undefined}>
+                <span class="label nav__num">01</span> Timeline
+              </a>
+            </li>
+            <li>
+              <a class="link" href="/#index" aria-current={current === "index" ? "page" : undefined}>
+                <span class="label nav__num">02</span> Model index
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap site-footer__inner">
+        <p class="label">Racing Lines © {year} · Original drawings by JL</p>
+        <ul class="swatches" aria-label="Palette">
+          <li><span style="background:#2C2C2C"></span><span class="label">Ink #2C2C2C</span></li>
+          <li><span style="background:#666666"></span><span class="label">Line #666666</span></li>
+          <li><span style="background:#FFFFFF"></span><span class="label">Paper #FFFFFF</span></li>
+        </ul>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgb(255 255 255 / 0.88);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--ink);
+  }
+  .site-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: var(--header-h);
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    text-decoration: none;
+  }
+  .brand__name {
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .brand__tag {
+    padding: 2px 8px;
+    border: 1px solid var(--line-30);
+  }
+  .nav {
+    display: flex;
+    gap: clamp(12px, 3vw, 32px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background-position: 0 calc(100% - 10px);
+  }
+  main:focus {
+    outline: none;
+  }
+  .site-footer {
+    margin-top: clamp(48px, 8vw, 96px);
+    border-top: 1px solid var(--ink);
+    background: var(--paper);
+  }
+  .site-footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    padding-block: 20px;
+  }
+  .swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .swatches li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .swatches li > span:first-child {
+    width: 12px;
+    height: 12px;
+    border: 1px solid var(--ink);
+  }
+
+  @media (max-width: 720px) {
+    .brand__tag {
+      display: none;
+    }
+  }
+  @media (max-width: 480px) {
+    .brand__name {
+      display: none;
+    }
+    .nav__num {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,557 @@
+---
+import Base from "../layouts/Base.astro";
+import CarCard from "../components/CarCard.astro";
+import ArchivePanel from "../components/ArchivePanel.astro";
+import Drawing from "../components/Drawing.astro";
+import BrandMark from "../components/BrandMark.astro";
+import {
+  archiveStats,
+  brandOf,
+  commitHash,
+  getArchive,
+  PROPULSION_LABELS,
+  spec,
+} from "../lib/archive";
+
+const cars = await getArchive();
+const stats = archiveStats(cars);
+const head = cars.at(-1);
+const headDrawing = head?.data.drawings.find((d) => d.view === "side") ?? head?.data.drawings[0];
+const span = stats.from && stats.to ? `${stats.from}–${stats.to}` : "—";
+---
+
+<Base
+  title="Racing Lines"
+  description="An archive of original car line drawings, ordered like commits on a branch, each with a sourced technical sheet."
+  current="timeline"
+>
+  <!-- Hero: what this is, the hard facts, and HEAD (the newest record) drawn large. -->
+  <section class="hero wrap" aria-labelledby="hero-title">
+    <div class="hero__copy" data-enter>
+      <p class="label hero__kicker">
+        <span class="hero__branch">main/heritage</span> · {cars.length} commits
+      </p>
+      <h1 id="hero-title">Original line drawings of the cars that defined their era.</h1>
+      <p class="hero__lede">
+        Every car in the archive is drawn by hand as a side elevation and logged in date order, like a
+        commit on a branch. Open any node for its sourced technical sheet.
+      </p>
+      <ul class="hero__facts" aria-label="Archive at a glance">
+        <li><strong>{stats.total}</strong><span class="label">Cars</span></li>
+        <li><strong>{stats.brands.length}</strong><span class="label">Brands</span></li>
+        <li><strong>{span}</strong><span class="label">Years</span></li>
+      </ul>
+      <div class="hero__actions">
+        <a class="btn" href="#timeline">Browse the timeline</a>
+        <a class="btn btn--ghost" href="#index">Open model index</a>
+      </div>
+    </div>
+
+    {
+      head && headDrawing && (
+        <a class="hero__head ticks" href={`/cars/${head.data.slug}/`} data-enter style="--d: 120ms">
+          <span class="hero__head-meta label">
+            <span>
+              HEAD <span class="arrow">→</span> <b>{commitHash(head.data.slug)}</b>
+            </span>
+            <span>{head.data.year}</span>
+          </span>
+          <Drawing
+            src={headDrawing.src}
+            alt={headDrawing.label}
+            length={spec(head.data, "Length")}
+            eager
+            transitionName={`hero-${head.data.slug}`}
+          />
+          <span class="hero__head-title">
+            <span>
+              {head.data.make} {head.data.model}
+            </span>
+            <span class="label">Latest entry <span class="arrow">→</span></span>
+          </span>
+        </a>
+      )
+    }
+  </section>
+
+  <!-- Timeline: the commit tree, with brand filter and order toggle. -->
+  <section id="timeline" class="timeline wrap" aria-labelledby="timeline-title">
+    <div class="section-head">
+      <p class="label">01 · Chrono tree</p>
+      <h2 id="timeline-title">Commit tree</h2>
+    </div>
+
+    <div class="toolbar" role="group" aria-label="Timeline controls">
+      <div class="toolbar__group">
+        <span class="label" id="filter-label">Brand</span>
+        <div class="chips" role="group" aria-labelledby="filter-label">
+          <button type="button" class="chip" data-filter="all" aria-pressed="true">
+            All <span class="chip__count">{stats.total}</span>
+          </button>
+          {
+            stats.brands.map((b) => (
+              <button type="button" class="chip" data-filter={b.slug} aria-pressed="false">
+                {b.name} <span class="chip__count">{b.count}</span>
+              </button>
+            ))
+          }
+        </div>
+      </div>
+      <div class="toolbar__group">
+        <span class="label" id="order-label">Order</span>
+        <div class="chips" role="group" aria-labelledby="order-label">
+          <button type="button" class="chip" data-order="asc" aria-pressed="true">
+            <span class="arrow">↑</span> Oldest first
+          </button>
+          <button type="button" class="chip" data-order="desc" aria-pressed="false">
+            <span class="arrow">↓</span> Newest first
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline__body">
+      <div class="tree">
+        <p class="branch-bar label">
+          <span>■ origin/main · master blueprint track</span>
+          <span>[{span}]</span>
+        </p>
+
+        {
+          cars.length > 0 ? (
+            <ol class="commits" id="commits" style={`--rail-w: clamp(44px, 7vw, 72px)`}>
+              {cars.map((car) => (
+                <CarCard car={car} />
+              ))}
+            </ol>
+          ) : (
+            <p class="empty">No published cars yet. Add a record in src/content/cars/ to start the branch.</p>
+          )
+        }
+
+        <p class="branch-bar label">
+          <span>■ end of branch · <span id="shown-count">{cars.length}</span> of {cars.length} shown</span>
+          <span>[{span}]</span>
+        </p>
+        <p class="visually-hidden" aria-live="polite" id="timeline-status"></p>
+      </div>
+
+      <ArchivePanel cars={cars} />
+    </div>
+  </section>
+
+  <!-- Model index: the whole archive at a glance. -->
+  <section id="index" class="index wrap" aria-labelledby="index-title">
+    <div class="section-head">
+      <p class="label">02 · Model index</p>
+      <h2 id="index-title">Model index</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Commit</th>
+            <th scope="col">Year</th>
+            <th scope="col">Model</th>
+            <th scope="col" class="hide-sm">Brand</th>
+            <th scope="col" class="hide-sm">Engine</th>
+            <th scope="col" class="hide-md">Propulsion</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            cars.map(({ data }) => (
+              <tr>
+                <td class="mono">{commitHash(data.slug)}</td>
+                <td>{data.year}</td>
+                <th scope="row">
+                  <a class="link" href={`/cars/${data.slug}/`}>
+                    {data.make} {data.model}
+                  </a>
+                </th>
+                <td class="hide-sm">
+                  <BrandMark brand={brandOf(data)} />
+                </td>
+                <td class="hide-sm">{spec(data, "Engine") ?? "—"}</td>
+                <td class="hide-md">{data.propulsion ? PROPULSION_LABELS[data.propulsion] : "—"}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</Base>
+
+<script>
+  // Filter + order for the commit tree. Progressive enhancement: without JS the full
+  // list shows oldest-first. State is mirrored in the URL (?brand=…&order=…) so views are shareable.
+  const list = document.querySelector<HTMLOListElement>("#commits");
+  if (list) {
+    const items = [...list.querySelectorAll<HTMLLIElement>(".commit")];
+    const filterBtns = [...document.querySelectorAll<HTMLButtonElement>("[data-filter]")];
+    const orderBtns = [...document.querySelectorAll<HTMLButtonElement>("[data-order]")];
+    const shown = document.querySelector("#shown-count");
+    const status = document.querySelector("#timeline-status");
+
+    const params = new URLSearchParams(location.search);
+    let brand = params.get("brand") ?? "all";
+    let order = params.get("order") === "desc" ? "desc" : "asc";
+    if (!filterBtns.some((b) => b.dataset.filter === brand)) brand = "all";
+
+    const render = () => {
+      const sorted = [...items].sort((a, b) => {
+        const d = Number(a.dataset.year) - Number(b.dataset.year);
+        return order === "asc" ? d : -d;
+      });
+      let count = 0;
+      for (const li of sorted) {
+        const visible = brand === "all" || li.dataset.brand === brand;
+        li.hidden = !visible;
+        if (visible) count++;
+        list.append(li); // re-append in order; keeps DOM order = visual order for keyboard users
+      }
+      filterBtns.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.filter === brand)));
+      orderBtns.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.order === order)));
+      if (shown) shown.textContent = String(count);
+      if (status) status.textContent = `${count} ${count === 1 ? "car" : "cars"} shown, ${order === "asc" ? "oldest" : "newest"} first`;
+
+      const url = new URL(location.href);
+      brand === "all" ? url.searchParams.delete("brand") : url.searchParams.set("brand", brand);
+      order === "asc" ? url.searchParams.delete("order") : url.searchParams.set("order", order);
+      history.replaceState(null, "", url);
+    };
+
+    // Animate re-ordering with the View Transitions API where supported.
+    const update = (mutate: () => void) => {
+      mutate();
+      const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!document.startViewTransition || reduce) return render();
+      items.forEach((li, i) => (li.style.viewTransitionName = `commit-${i}`));
+      const t = document.startViewTransition(render);
+      t.finished.finally(() => items.forEach((li) => (li.style.viewTransitionName = "")));
+    };
+
+    filterBtns.forEach((b) => b.addEventListener("click", () => update(() => (brand = b.dataset.filter ?? "all"))));
+    orderBtns.forEach((b) => b.addEventListener("click", () => update(() => (order = b.dataset.order ?? "asc"))));
+
+    if (brand !== "all" || order !== "asc") render();
+  }
+</script>
+
+<style>
+  /* ---------- Hero ---------- */
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: center;
+    gap: clamp(32px, 5vw, 72px);
+    min-height: calc(100svh - var(--header-h));
+    padding-block: clamp(40px, 7vw, 88px);
+  }
+  .hero__kicker {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .hero__branch {
+    padding: 2px 8px;
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    text-transform: none;
+    letter-spacing: 0.02em;
+  }
+  .hero h1 {
+    margin-top: 20px;
+    font-size: var(--step-3);
+    text-transform: uppercase;
+    line-height: 0.98;
+  }
+  .hero__lede {
+    margin-top: 20px;
+    max-width: 46ch;
+    color: var(--line);
+    font-size: var(--step-1);
+    line-height: 1.45;
+  }
+  .hero__facts {
+    display: flex;
+    gap: 0;
+    margin: 28px 0 0;
+    padding: 0;
+    list-style: none;
+    border-block: 1px solid var(--line-50);
+  }
+  .hero__facts li {
+    display: grid;
+    flex: 1;
+    gap: 2px;
+    padding: 12px 16px 12px 0;
+  }
+  .hero__facts li + li {
+    padding-left: 16px;
+    border-left: 1px solid var(--line-30);
+  }
+  .hero__facts strong {
+    font-size: var(--step-2);
+    font-weight: 600;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 28px;
+  }
+
+  .hero__head {
+    display: grid;
+    gap: 16px;
+    padding: clamp(16px, 2.4vw, 28px);
+    background: var(--paper);
+    border: 1px solid var(--line-50);
+    text-decoration: none;
+    transition:
+      transform 220ms var(--ease),
+      border-color 220ms var(--ease);
+  }
+  .hero__head:hover {
+    transform: translateY(-2px);
+    border-color: var(--ink);
+  }
+  .hero__head:hover :global(.drawing__sheet img) {
+    transform: scale(1.025);
+  }
+  .hero__head-meta,
+  .hero__head-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .hero__head-meta b {
+    color: var(--ink);
+  }
+  .hero__head-title > span:first-child {
+    font-size: var(--step-1);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  /* One entrance on load, then still. */
+  [data-enter] {
+    animation: enter 700ms var(--ease) both;
+    animation-delay: var(--d, 0ms);
+  }
+  @keyframes enter {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+  }
+
+  /* ---------- Section heads ---------- */
+  .section-head {
+    display: grid;
+    gap: 6px;
+    padding-top: clamp(24px, 4vw, 48px);
+    margin-bottom: 20px;
+    border-top: 1px solid var(--ink);
+  }
+  .section-head h2 {
+    font-size: var(--step-2);
+    text-transform: uppercase;
+  }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 16px 32px;
+    padding: 12px 0;
+    margin-bottom: 24px;
+    border-block: 1px solid var(--line-30);
+  }
+  .toolbar__group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--line-50);
+    border-radius: var(--radius);
+    background: var(--paper);
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition:
+      background-color 160ms var(--ease),
+      color 160ms var(--ease),
+      border-color 160ms var(--ease),
+      transform 160ms var(--ease);
+  }
+  .chip:hover {
+    border-color: var(--ink);
+    transform: translateY(-1px);
+  }
+  .chip:active {
+    transform: translateY(1px);
+  }
+  .chip[aria-pressed="true"] {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+  .chip__count {
+    min-width: 1.6em;
+    padding: 0 4px;
+    border: 1px solid currentColor;
+    text-align: center;
+    font-weight: 500;
+    opacity: 0.8;
+  }
+
+  /* ---------- Timeline ---------- */
+  .timeline__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: clamp(24px, 3vw, 40px);
+    align-items: start;
+  }
+  .timeline__body > :global(.panel) {
+    position: sticky;
+    top: calc(var(--header-h) + 16px);
+  }
+  .branch-bar {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px;
+    background: var(--wash-strong);
+    color: var(--ink);
+  }
+  .commits {
+    position: relative;
+    display: grid;
+    gap: clamp(24px, 3vw, 40px);
+    margin: 0;
+    padding: clamp(24px, 3vw, 40px) 0;
+    list-style: none;
+  }
+  /* The trunk line, running through every node. */
+  .commits::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(var(--rail-w) / 2);
+    border-left: 1.5px solid var(--ink);
+  }
+  .empty {
+    padding: 32px;
+    color: var(--line);
+  }
+
+  ::view-transition-group(.commit) {
+    animation-duration: 380ms;
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  /* ---------- Model index ---------- */
+  .index {
+    margin-top: clamp(48px, 8vw, 96px);
+  }
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--step--1);
+  }
+  th,
+  td {
+    padding: 12px 16px;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--line-30);
+  }
+  thead th {
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--line);
+    background: var(--wash);
+    border-bottom-color: var(--ink);
+  }
+  tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+  tbody tr {
+    transition: background-color 160ms var(--ease);
+  }
+  tbody tr:hover {
+    background: var(--wash);
+  }
+  tbody th {
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  tbody th a {
+    display: inline-block;
+    padding-block: 12px;
+    margin-block: -12px;
+  }
+  .mono {
+    font-weight: 600;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 1024px) {
+    .hero {
+      grid-template-columns: 1fr;
+      min-height: auto;
+    }
+    .timeline__body {
+      grid-template-columns: 1fr;
+    }
+    .timeline__body > :global(.panel) {
+      position: static;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+    .hide-md {
+      display: none;
+    }
+  }
+  @media (max-width: 640px) {
+    .hide-sm {
+      display: none;
+    }
+    .hero__actions .btn {
+      flex: 1 1 100%;
+    }
+    .toolbar {
+      flex-direction: column;
+    }
+    .branch-bar > span:last-child {
+      display: none;
+    }
+  }
+</style>

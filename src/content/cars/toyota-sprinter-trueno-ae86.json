@@ -1,0 +1,77 @@
+{
+  "slug": "toyota-sprinter-trueno-ae86",
+  "status": "published",
+  "make": "Toyota",
+  "model": "Sprinter Trueno",
+  "year": 1983,
+  "country": "Japan",
+  "designation": "AE86 · GT-APEX 3-door",
+  "propulsion": "naturally-aspirated",
+  "introduction": "When the fifth-generation Sprinter range moved to front-wheel drive in 1983, Toyota kept its sporty Trueno coupés on a rear-drive platform. The GT-APEX 3-door paired pop-up headlamps with the new twin-cam 4A-GE engine, creating a light, balanced car that later became a drifting icon.",
+  "drawings": [
+    {
+      "src": "/drawings/toyota-a86-trueno/toyota-a86-trueno.svg",
+      "view": "side",
+      "label": "Toyota Sprinter Trueno AE86, side elevation"
+    }
+  ],
+  "specifications": {
+    "powertrain": [
+      { "label": "Engine", "value": "4A-GE (4A-GEU) 1,587 cc inline-4, DOHC 16-valve" },
+      { "label": "Power", "value": "130 PS at 6,600 rpm (JIS gross)" },
+      { "label": "Torque", "value": "15.2 kgf·m (149 N·m) at 5,200 rpm (JIS gross)" },
+      { "label": "Transmission", "value": "5-speed manual" }
+    ],
+    "chassis": [
+      { "label": "Layout", "value": "Front-engine, rear-wheel drive" },
+      { "label": "Front suspension", "value": "MacPherson strut" },
+      { "label": "Rear suspension", "value": "Four-link live axle with lateral rod and coil springs" },
+      { "label": "Body", "value": "3-door hatchback coupé (liftback)" }
+    ],
+    "dimensions": [
+      { "label": "Length", "value": "4,205 mm" },
+      { "label": "Width", "value": "1,625 mm" },
+      { "label": "Height", "value": "1,335 mm" },
+      { "label": "Wheelbase", "value": "2,400 mm" }
+    ]
+  },
+  "history": {
+    "format": "highlights",
+    "entries": [
+      {
+        "title": "Launched as a rear-drive holdout",
+        "detail": "Toyota released the fifth-generation Sprinter on 12 May 1983. While the sedans switched to front-wheel drive, the Trueno coupés stayed rear-wheel drive and were set apart from the sister Corolla Levin by retractable headlamps.",
+        "year": 1983
+      },
+      {
+        "title": "Replaced by front-drive successor",
+        "detail": "AE86 production ended in 1987, when the next Sprinter Trueno (AE92) moved the line to front-wheel drive, leaving the AE86 as the last rear-drive Trueno of its era.",
+        "year": 1987
+      },
+      {
+        "title": "Pop-culture fame through Initial D",
+        "detail": "The manga Initial D, first published in 1995, made a Sprinter Trueno its hero's mountain-pass delivery car, a role widely credited with driving up the car's collector value.",
+        "year": 1995
+      }
+    ]
+  },
+  "relatedCars": [],
+  "sources": [
+    {
+      "title": "Toyota 75 Years: Vehicle Lineage, Sprinter Trueno (5th generation)",
+      "url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60009032/"
+    },
+    {
+      "title": "Toyota Global Newsroom: Sprinter full model change press release (12 May 1983)",
+      "url": "https://global.toyota/jp/detail/14120315"
+    },
+    {
+      "title": "Toyota AE86 (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Toyota_AE86"
+    },
+    {
+      "title": "Kuruma News: AE86 Corolla Levin / Sprinter Trueno retrospective",
+      "url": "https://kuruma-news.jp/post/248367/2"
+    }
+  ]
+}

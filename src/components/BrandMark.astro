@@ -1,0 +1,69 @@
+---
+import type { Brand } from "../lib/archive";
+
+/**
+ * Manufacturer mark. Shows the logo from public/brands/<slug>.svg when one is supplied,
+ * otherwise a typographic plate (make + country code) in the drawing-title style.
+ */
+interface Props {
+  brand: Brand;
+  size?: "sm" | "lg";
+}
+const { brand, size = "sm" } = Astro.props;
+---
+
+{
+  brand.logo ? (
+    <img
+      class:list={["mark mark--logo", `mark--${size}`]}
+      src={brand.logo}
+      alt={`${brand.name} logo`}
+      loading="lazy"
+      decoding="async"
+    />
+  ) : (
+    <span class:list={["mark mark--type", `mark--${size}`]} aria-label={brand.name}>
+      <span class="mark__name">{brand.name}</span>
+      {brand.country && <span class="mark__country">{brand.country}</span>}
+    </span>
+  )
+}
+
+<style>
+  .mark--logo {
+    height: 40px;
+    width: auto;
+    max-width: 96px;
+    object-fit: contain;
+    filter: grayscale(1);
+    opacity: 0.8;
+  }
+  .mark--logo.mark--lg {
+    height: 64px;
+    max-width: 160px;
+  }
+  .mark--type {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid var(--ink);
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .mark--type > span {
+    padding: 4px 8px;
+  }
+  .mark__country {
+    border-left: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .mark--type.mark--lg {
+    font-size: var(--step-0);
+  }
+  .mark--type.mark--lg > span {
+    padding: 8px 12px;
+  }
+</style>

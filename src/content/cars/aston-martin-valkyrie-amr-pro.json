@@ -1,0 +1,73 @@
+{
+  "slug": "aston-martin-valkyrie-amr-pro",
+  "status": "published",
+  "make": "Aston Martin",
+  "model": "Valkyrie AMR Pro",
+  "year": 2021,
+  "country": "United Kingdom",
+  "designation": "Track-only",
+  "propulsion": "naturally-aspirated",
+  "introduction": "The AMR Pro is the circuit-only version of the Valkyrie hypercar. Aston Martin removed the road car's hybrid system, lengthened the wheelbase and widened the tracks, leaving a Cosworth V12 revving to 11,000 rpm and an aero package aimed at Le Mans prototype lap times.",
+  "drawings": [
+    {
+      "src": "/drawings/aston-martin-valkyrie/aston-martin-valkyrie.svg",
+      "view": "side",
+      "label": "Aston Martin Valkyrie AMR Pro, side elevation"
+    }
+  ],
+  "specifications": {
+    "powertrain": [
+      { "label": "Engine", "value": "Cosworth 6.5-litre naturally aspirated V12" },
+      { "label": "Power", "value": "Approx. 1,000 bhp (745 kW), manufacturer target" },
+      { "label": "Rev limit", "value": "11,000 rpm" },
+      { "label": "Hybrid system", "value": "Removed (road car's battery-electric system deleted to save weight)" }
+    ],
+    "chassis": [
+      { "label": "Layout", "value": "Mid-engine, rear-wheel drive" },
+      { "label": "Wheelbase change", "value": "380 mm longer than the Valkyrie road car" },
+      { "label": "Track change", "value": "96 mm wider at the front, 115 mm wider at the rear than the road car" },
+      { "label": "Body", "value": "Carbon-fibre bodywork with carbon-fibre suspension wishbones and Perspex glazing" },
+      { "label": "Lateral acceleration", "value": "More than 3 g (manufacturer claim)" }
+    ],
+    "dimensions": []
+  },
+  "history": {
+    "format": "highlights",
+    "entries": [
+      {
+        "title": "Concept shown at Geneva",
+        "detail": "Aston Martin first presented the track-only AMR Pro at the 2018 Geneva Motor Show as a companion to the Valkyrie road car developed with Red Bull Advanced Technologies.",
+        "year": 2018
+      },
+      {
+        "title": "Production version revealed",
+        "detail": "In June 2021 the company detailed the reworked production car, now without hybrid assistance, and set a run of 40 cars plus two prototypes, with first deliveries planned for the end of that year.",
+        "year": 2021
+      },
+      {
+        "title": "Le Mans lap target",
+        "detail": "Aston Martin said the car was designed to lap the 13.6 km Circuit de la Sarthe in roughly 3 minutes 20 seconds.",
+        "year": 2021
+      }
+    ]
+  },
+  "relatedCars": [],
+  "sources": [
+    {
+      "title": "Aston Martin: Valkyrie AMR Pro, performance",
+      "url": "https://www.astonmartin.com/en/models/valkyrie-amr-pro/models-overlay-page---blistering-performance?m=1"
+    },
+    {
+      "title": "CarExpert: Aston Martin Valkyrie AMR Pro revealed (28 June 2021)",
+      "url": "https://carexpert.com.au/car-news/aston-martin-valkyrie-amr-pro-revealed"
+    },
+    {
+      "title": "The Drive: Aston Martin Valkyrie AMR Pro revs to 11,000 rpm and pulls over 3 g",
+      "url": "https://www.thedrive.com/news/41300/aston-martin-valkyrie-amr-pro-revs-to-11000-rpm-and-pulls-over-3gs"
+    },
+    {
+      "title": "Aston Martin Valkyrie (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Aston_Martin_Valkyrie"
+    }
+  ]
+}

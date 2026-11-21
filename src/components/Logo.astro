@@ -1,0 +1,26 @@
+---
+/** JL logo, inlined so it inherits currentColor and costs no extra request. Source: src/assets/jl-logo.svg */
+import logo from "../assets/jl-logo.svg?raw";
+
+interface Props {
+  /** Rendered height in px; width follows the 389:161 artwork ratio. */
+  height?: number;
+}
+const { height = 28 } = Astro.props;
+
+const svg = logo
+  .replace(/(fill|stroke)="black"/g, '$1="currentColor"')
+  .replace(/\swidth="[^"]*"\sheight="[^"]*"/, ` height="${height}" aria-hidden="true" focusable="false"`);
+---
+
+<span class="logo" set:html={svg} />
+
+<style>
+  .logo {
+    display: inline-flex;
+    color: var(--ink);
+  }
+  .logo :global(svg) {
+    width: auto;
+  }
+</style>

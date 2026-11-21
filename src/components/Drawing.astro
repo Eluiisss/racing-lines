@@ -1,0 +1,91 @@
+---
+import { svgSize } from "../lib/archive";
+
+/**
+ * A car drawing on a drafting panel, with an overall-length dimension line beneath
+ * when the length is known. The SVG loads as an <img> with intrinsic size (no layout shift).
+ */
+interface Props {
+  src: string;
+  alt: string;
+  length?: string;
+  eager?: boolean;
+  /** view-transition-name for page-to-page morphing. */
+  transitionName?: string;
+}
+const { src, alt, length, eager = false, transitionName } = Astro.props;
+const { width, height } = svgSize(src);
+---
+
+<figure class="drawing">
+  <div class="drawing__sheet">
+    <img
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      loading={eager ? "eager" : "lazy"}
+      fetchpriority={eager ? "high" : "auto"}
+      decoding="async"
+      style={transitionName ? `view-transition-name:${transitionName}` : undefined}
+    />
+  </div>
+  {
+    length && (
+      <div class="dim" aria-label={`Overall length ${length}`}>
+        <span class="dim__value">{length}</span>
+      </div>
+    )
+  }
+</figure>
+
+<style>
+  .drawing {
+    display: grid;
+    gap: 10px;
+  }
+  .drawing__sheet {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 6.2;
+    padding: clamp(12px, 3vw, 32px);
+    border: 1px solid var(--line-50);
+    overflow: hidden;
+    /* Faint sheet grid: reads as drafting paper, not a chart. */
+    --grid: rgb(102 102 102 / 0.1);
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 100% 25%,
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 10% 100%,
+      var(--paper);
+  }
+  .drawing__sheet img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 400ms var(--ease);
+  }
+  /* Dimension line: |<———— 4,205 mm ————>| */
+  .dim {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    height: 14px;
+    margin-inline: clamp(12px, 3vw, 32px);
+    border-inline: 1px solid var(--line-80);
+  }
+  .dim::before {
+    content: "";
+    position: absolute;
+    inset: 50% 0 auto;
+    border-top: 1px solid var(--line-80);
+  }
+  .dim__value {
+    position: relative;
+    padding-inline: 10px;
+    background: var(--paper);
+    font-size: var(--step--1);
+    line-height: 14px;
+    color: var(--line);
+    letter-spacing: 0.04em;
+  }
+</style>

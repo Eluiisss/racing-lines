@@ -1,0 +1,74 @@
+{
+  "slug": "ford-gt-2017",
+  "status": "published",
+  "make": "Ford",
+  "model": "GT",
+  "year": 2017,
+  "country": "United States",
+  "designation": "Second generation",
+  "propulsion": "turbocharged",
+  "introduction": "Ford's second-generation GT was developed alongside a Le Mans racer and built around a carbon-fibre tub with a twin-turbo V6. Its narrow teardrop cabin and open flying buttresses channel air through the body, and Ford rated it as its fastest production car at launch.",
+  "drawings": [
+    {
+      "src": "/drawings/ford-gt/ford-gt.svg",
+      "view": "side",
+      "label": "Ford GT (second generation), side elevation"
+    }
+  ],
+  "specifications": {
+    "powertrain": [
+      { "label": "Engine", "value": "3.5-litre twin-turbocharged EcoBoost V6" },
+      { "label": "Power", "value": "647 hp (SAE) at 6,250 rpm" },
+      { "label": "Torque", "value": "550 lb-ft (746 N·m) at 5,900 rpm" },
+      { "label": "Transmission", "value": "7-speed dual-clutch" }
+    ],
+    "chassis": [
+      { "label": "Layout", "value": "Mid-engine, rear-wheel drive" },
+      { "label": "Dry weight", "value": "1,385 kg" },
+      { "label": "Top speed", "value": "347 km/h (216 mph)" },
+      { "label": "Construction", "value": "Carbon-fibre monocoque with aluminium front and rear subframes, carbon-fibre body panels" },
+      { "label": "Suspension", "value": "Pushrod with hydraulically adjustable ride height" }
+    ],
+    "dimensions": [
+      { "label": "Length", "value": "4,763 mm" },
+      { "label": "Width", "value": "2,004 mm" },
+      { "label": "Height", "value": "1,110 mm" },
+      { "label": "Wheelbase", "value": "2,710 mm" }
+    ]
+  },
+  "history": {
+    "format": "highlights",
+    "entries": [
+      {
+        "title": "Surprise reveal in Detroit",
+        "detail": "Ford unveiled the new GT at the 2015 North American International Auto Show, presenting a carbon-bodied supercar with an EcoBoost V6 instead of the V8 used by earlier GTs.",
+        "year": 2015
+      },
+      {
+        "title": "Class win at Le Mans",
+        "detail": "The racing version took the GTE-Pro class at the 2016 24 Hours of Le Mans with the No. 68 Ford Chip Ganassi Racing car, fifty years after the GT40's 1966 overall victory.",
+        "year": 2016
+      },
+      {
+        "title": "Production begins",
+        "detail": "Series production of the road car started in December 2016, with first customer cars counted as 2017 models.",
+        "year": 2016
+      }
+    ]
+  },
+  "relatedCars": [],
+  "sources": [
+    {
+      "title": "Ford GT (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Ford_GT"
+    },
+    {
+      "title": "Ford Authority: The 2017 Ford GT makes 647 horsepower, 216 mph top speed",
+      "url": "https://fordauthority.com/2017/01/the-2017-ford-gt-647-horsepower-216mph-top-speed/"
+    },
+    {
+      "title": "Car Guide (Guide Auto): 2017 Ford GT specifications",
+      "url": "https://www.guideautoweb.com/en/new-cars/compare/1949"
+    }
+  ]
+}

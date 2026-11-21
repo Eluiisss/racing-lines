@@ -1,0 +1,285 @@
+---
+import BrandMark from "./BrandMark.astro";
+import Drawing from "./Drawing.astro";
+import {
+  brandOf,
+  commitHash,
+  commitMessage,
+  headlineSpecs,
+  PROPULSION_LABELS,
+  spec,
+  type Car,
+} from "../lib/archive";
+
+interface Props {
+  car: Car;
+  /** First card loads its drawing eagerly (LCP candidate). */
+  eager?: boolean;
+}
+
+const { car, eager = false } = Astro.props;
+const { data } = car;
+const brand = brandOf(data);
+const hash = commitHash(data.slug);
+const drawing = data.drawings.find((d) => d.view === "side") ?? data.drawings[0];
+const specs = headlineSpecs(data);
+const href = `/cars/${data.slug}/`;
+---
+
+<li class="commit" data-brand={brand.slug} data-year={data.year}>
+  <div class="commit__rail" aria-hidden="true">
+    <span class="commit__node"></span>
+    <span class="commit__year">{data.year}</span>
+  </div>
+
+  <article class="card ticks" aria-labelledby={`car-${data.slug}`}>
+    <p class="card__meta label">
+      <span class="card__hash">{hash}</span>
+      <span class="card__msg">{commitMessage(data)}</span>
+      <span class="card__tag">tag {data.year}</span>
+    </p>
+
+    <div class="card__head">
+      <div>
+        <p class="label">{data.make}{data.country && ` · ${data.country}`}</p>
+        <h3 id={`car-${data.slug}`}>
+          <a class="card__link" href={href}>{data.make} {data.model}</a>
+        </h3>
+        {data.designation && <p class="card__designation">{data.designation}</p>}
+      </div>
+      <BrandMark brand={brand} />
+    </div>
+
+    {
+      drawing && (
+        <Drawing
+          src={drawing.src}
+          alt={drawing.label}
+          length={spec(data, "Length")}
+          eager={eager}
+          transitionName={`drawing-${data.slug}`}
+        />
+      )
+    }
+
+    {
+      specs.length > 0 && (
+        <dl class="specs">
+          {specs.map((s) => (
+            <div>
+              <dt class="label">{s.label}</dt>
+              <dd>{s.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )
+    }
+
+    <div class="card__foot">
+      <span class="label">{data.propulsion ? PROPULSION_LABELS[data.propulsion] : " "}</span>
+      <span class="card__cta" aria-hidden="true">Open technical sheet <span class="arrow">→</span></span>
+    </div>
+  </article>
+</li>
+
+<style>
+  .commit {
+    display: grid;
+    grid-template-columns: var(--rail-w) minmax(0, 1fr);
+    gap: 0 clamp(12px, 2vw, 24px);
+    view-transition-class: commit;
+  }
+  .commit[hidden] {
+    display: none;
+  }
+
+  /* Rail: node + year, sits on the trunk line drawn by the list. */
+  .commit__rail {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding-top: 22px;
+  }
+  .commit__node {
+    position: relative;
+    z-index: 1;
+    width: 20px;
+    height: 20px;
+    border: 1.5px solid var(--ink);
+    border-radius: 50%;
+    background: var(--paper);
+    transition: background-color 200ms var(--ease);
+  }
+  .commit__node::after {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    background: var(--ink);
+    transform: scale(0.45);
+    transition: transform 200ms var(--ease);
+  }
+  .commit__year {
+    position: relative;
+    z-index: 1;
+    padding: 2px 0;
+    background: var(--paper);
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+  .commit:hover .commit__node::after,
+  .commit:focus-within .commit__node::after {
+    transform: scale(1);
+  }
+
+  /* Card */
+  .card {
+    position: relative;
+    display: grid;
+    gap: clamp(16px, 2vw, 22px);
+    padding: clamp(16px, 2.4vw, 28px);
+    background: var(--paper);
+    border: 1px solid var(--line-50);
+    transition:
+      transform 220ms var(--ease),
+      box-shadow 220ms var(--ease),
+      border-color 220ms var(--ease);
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    border-color: var(--ink);
+    box-shadow: 0 10px 24px -18px rgb(44 44 44 / 0.6);
+  }
+  .card:hover :global(.drawing__sheet img) {
+    transform: scale(1.025);
+  }
+
+  .card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--line-30);
+    text-transform: none;
+    letter-spacing: 0.02em;
+  }
+  .card__hash {
+    padding: 1px 6px;
+    border: 1px solid var(--line-50);
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .card__msg {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .card__tag {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .card__head h3 {
+    margin-top: 4px;
+    font-size: var(--step-2);
+    text-transform: uppercase;
+  }
+  .card__link {
+    text-decoration: none;
+  }
+  /* Whole card is the link target. */
+  .card__link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+  }
+  .card__link:focus-visible {
+    outline: none;
+  }
+  .card:has(.card__link:focus-visible) {
+    outline: 2px solid var(--ink);
+    outline-offset: 4px;
+  }
+  .card__designation {
+    margin-top: 6px;
+    color: var(--line);
+    font-size: var(--step--1);
+    letter-spacing: 0.04em;
+  }
+
+  .specs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--line-30);
+    border: 1px solid var(--line-30);
+  }
+  .specs > div {
+    padding: 10px 12px;
+    background: var(--paper);
+  }
+  .specs dd {
+    margin-top: 2px;
+    font-weight: 600;
+    font-size: var(--step--1);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .card__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .card__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 14px;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .card__cta .arrow {
+    transition: transform 200ms var(--ease);
+  }
+  .card:hover .card__cta .arrow {
+    transform: translateX(4px);
+  }
+
+  @media (max-width: 560px) {
+    .card__head {
+      flex-direction: column-reverse;
+      gap: 12px;
+    }
+    .card__cta {
+      width: 100%;
+      justify-content: center;
+    }
+    .card__foot {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .specs {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>

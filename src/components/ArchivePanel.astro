@@ -1,0 +1,220 @@
+---
+import { archiveStats, type Car } from "../lib/archive";
+
+/** Sidebar: live archive figures, propulsion breakdown and the drawing title block. */
+interface Props {
+  cars: Car[];
+}
+const { cars } = Astro.props;
+const stats = archiveStats(cars);
+
+// Monochrome series: ink, then #666 at decreasing opacity.
+const SERIES = ["#2C2C2C", "#666666", "rgb(102 102 102 / 0.55)", "rgb(102 102 102 / 0.3)", "rgb(102 102 102 / 0.15)"];
+const typed = stats.propulsion.reduce((n, p) => n + p.count, 0);
+let offset = 0;
+const segments = stats.propulsion.map((p, i) => {
+  const share = typed ? (p.count / typed) * 100 : 0;
+  const seg = { ...p, share, offset, color: SERIES[i % SERIES.length] };
+  offset += share;
+  return seg;
+});
+
+const pad = (n: number) => String(n).padStart(2, "0");
+const release = new Date().toLocaleDateString("en-GB", { month: "short", year: "numeric" }).toUpperCase();
+const drawingNo = `RL-ARC-${stats.from ?? "0000"}-${pad(stats.total)}`;
+---
+
+<aside class="panel" aria-label="Archive figures">
+  <section class="block ticks">
+    <h2 class="block__title label">Archive status <span class="status">● Online</span></h2>
+    <dl class="figures">
+      <div><dt class="label">Cars</dt><dd>{pad(stats.total)}</dd></div>
+      <div><dt class="label">Brands</dt><dd>{pad(stats.brands.length)}</dd></div>
+      <div><dt class="label">Drawings</dt><dd>{pad(stats.drawings)}</dd></div>
+      <div>
+        <dt class="label">Era span</dt>
+        <dd>{stats.from && stats.to ? <>{stats.to - stats.from}<small> yrs</small></> : "—"}</dd>
+      </div>
+    </dl>
+  </section>
+
+  {
+    segments.length > 0 && (
+      <section class="block ticks">
+        <h2 class="block__title label">Propulsion</h2>
+        <div class="donut">
+          <svg viewBox="0 0 42 42" role="img" aria-labelledby="donut-desc">
+            <desc id="donut-desc">
+              {segments.map((s) => `${s.label}: ${s.count} of ${typed}`).join("; ")}
+            </desc>
+            <circle cx="21" cy="21" r="15.9155" fill="none" stroke="var(--wash-strong)" stroke-width="5" />
+            {segments.map((s) => (
+              <circle
+                cx="21"
+                cy="21"
+                r="15.9155"
+                fill="none"
+                stroke={s.color}
+                stroke-width="5"
+                pathLength="100"
+                stroke-dasharray={`${Math.max(s.share - 0.6, 0)} ${100 - Math.max(s.share - 0.6, 0)}`}
+                stroke-dashoffset={25 - s.offset}
+              />
+            ))}
+          </svg>
+          <p class="donut__centre">
+            <strong>{typed}</strong>
+            <span class="label">cars</span>
+          </p>
+        </div>
+        <ul class="legend">
+          {segments.map((s) => (
+            <li>
+              <span class="legend__swatch" style={`background:${s.color}`} />
+              <span>{s.label}</span>
+              <span class="legend__pct">{Math.round(s.share)}%</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  <section class="block titleblock">
+    <h2 class="visually-hidden">Title block</h2>
+    <div class="tb-head">
+      <span class="label">Title block</span>
+      <strong>Racing Lines Archive</strong>
+      <span class="label">Drawing no. {drawingNo}</span>
+    </div>
+    <dl class="tb-grid">
+      <div><dt class="label">Drawn by</dt><dd>JL</dd></div>
+      <div><dt class="label">Scale</dt><dd>NTS</dd></div>
+      <div><dt class="label">Sheet</dt><dd>01 of 01</dd></div>
+      <div><dt class="label">Release</dt><dd>{release}</dd></div>
+    </dl>
+  </section>
+</aside>
+
+<style>
+  .panel {
+    display: grid;
+    gap: 16px;
+    align-content: start;
+  }
+  .block {
+    padding: 18px;
+    background: var(--paper);
+    border: 1px solid var(--line-50);
+  }
+  .block__title {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .status {
+    color: var(--line);
+    font-weight: 500;
+  }
+  .figures {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--line-30);
+    border: 1px solid var(--line-30);
+  }
+  .figures > div {
+    padding: 10px 12px;
+    background: var(--paper);
+  }
+  .figures dd small {
+    font-size: var(--step--1);
+    font-weight: 500;
+    color: var(--line);
+  }
+  .figures dd {
+    white-space: nowrap;
+    font-size: var(--step-2);
+    font-weight: 600;
+    line-height: 1.1;
+  }
+
+  .donut {
+    position: relative;
+    width: min(180px, 100%);
+    margin: 4px auto 16px;
+  }
+  .donut svg {
+    width: 100%;
+    height: auto;
+  }
+  .donut__centre {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    line-height: 1;
+  }
+  .donut__centre strong {
+    font-size: var(--step-2);
+  }
+  .legend {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--step--1);
+  }
+  .legend li {
+    display: grid;
+    grid-template-columns: 12px 1fr auto;
+    align-items: center;
+    gap: 10px;
+  }
+  .legend__swatch {
+    width: 12px;
+    height: 12px;
+    border: 1px solid var(--line-50);
+  }
+  .legend__pct {
+    font-weight: 600;
+  }
+
+  .titleblock {
+    padding: 0;
+    border-color: var(--ink);
+  }
+  .tb-head {
+    display: grid;
+    gap: 4px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--ink);
+  }
+  .tb-head strong {
+    font-size: var(--step-1);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .tb-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .tb-grid > div {
+    padding: 10px 16px;
+  }
+  .tb-grid > div:nth-child(odd) {
+    border-right: 1px solid var(--line-50);
+  }
+  .tb-grid > div:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--line-50);
+  }
+  .tb-grid dd {
+    font-weight: 600;
+    font-size: var(--step--1);
+    letter-spacing: 0.04em;
+  }
+</style>

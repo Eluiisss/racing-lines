@@ -38,4 +38,14 @@ This project uses Astro's static output and does not require the Cloudflare SSR 
 
 ## Design handoff
 
-The [Home Figma design](https://www.figma.com/design/ziA7SeVeTvfIynGGz4wDec/Racing-Lines?node-id=602-2272) is not marked Ready-to-dev. Visual implementation should wait for approved design context for each section; the current written brief is [DESIGN.md](./DESIGN.md).
+The [Home Figma design](https://www.figma.com/design/ziA7SeVeTvfIynGGz4wDec/Racing-Lines?node-id=602-2272) is the reference draft for Home; the implementation adapts it rather than matching it 1:1. The written brief is [DESIGN.md](./DESIGN.md).
+
+## Brand logos
+
+Drop a monochrome SVG at `public/brands/<make-in-kebab-case>.svg` (for example `public/brands/aston-martin.svg`) and it replaces the typographic brand plate on cards, the model index and car pages automatically. Only use logo files you are cleared to use.
+
+## Logo and fonts
+
+The JL logo lives in `src/assets/jl-logo.svg`. The header inlines it, and `/favicon.svg` is generated from the same file at build time, so replacing that one file updates both.
+
+The site currently uses the system monospace stack (`--font` in `src/styles/global.css`). To bring back Chakra Petch, add it under `fonts` in `astro.config.mjs` with `fontProviders.google()` and render `<Font>` in the layout; on a network that re-signs TLS traffic, build with `NODE_OPTIONS=--use-system-ca`.

@@ -49,6 +49,12 @@ const cars = defineCollection({
     model: z.string().trim().min(1),
     year: z.number().int().min(1886).max(2100),
     country: z.string().trim().min(1).optional(),
+    /** Short variant label shown under the title, e.g. "AE86 · 3-door liftback". */
+    designation: z.string().trim().min(1).optional(),
+    /** Drives the propulsion breakdown on Home. */
+    propulsion: z
+      .enum(["naturally-aspirated", "turbocharged", "supercharged", "hybrid", "electric"])
+      .optional(),
     introduction: z.string().trim().min(1).optional(),
     drawings: z
       .array(
